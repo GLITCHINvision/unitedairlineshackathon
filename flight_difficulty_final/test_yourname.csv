@@ -1,22 +1,22 @@
 company_id,flight_number,scheduled_departure_date_local,difficulty_score,rank,class
-ve ,2,23/9/2025,25/9/2025,.66,difficult 
-ve ,2,23/9/2025,25/9/2025,.66,difficult 
-ve ,2,23/9/2025,25/9/2025,.66,difficult 
-ve ,2,23/9/2025,25/9/2025,.66,difficult 
-ve ,2,23/9/2025,25/9/2025,.66,difficult 
-ve ,2,23/9/2025,25/9/2025,.66,difficult 
-ve ,2,23/9/2025,25/9/2025,.66,difficult 
-ve ,2,23/9/2025,25/9/2025,.66,difficult 
-ve ,2,23/9/2025,25/9/2025,.66,difficult 
-ve ,2,23/9/2025,25/9/2025,.66,difficult 
-ve ,2,23/9/2025,25/9/2025,.66,difficult 
-ve ,2,23/9/2025,25/9/2025,.66,difficult 
-ve ,2,23/9/2025,25/9/2025,.66,difficult 
-ve ,2,23/9/2025,25/9/2025,.66,difficult 
-ve ,2,23/9/2025,25/9/2025,.66,difficult 
-ve ,2,23/9/2025,25/9/2025,.66,difficult 
-ve ,2,23/9/2025,25/9/2025,.66,difficult 
-ve ,2,23/9/2025,25/9/2025,.66,difficult 
-ve ,2,23/9/2025,25/9/2025,.66,difficult 
-ve ,2,23/9/2025,25/9/2025,.66,difficult 
-ve ,2,23/9/2025,25/9/2025,.66,difficult 
+UA123,UA123,2025-09-23,0.66,1,Difficult
+UA124,UA124,2025-09-23,0.58,2,Medium
+UA125,UA125,2025-09-23,0.72,3,Difficult
+UA126,UA126,2025-09-23,0.45,4,Medium
+UA127,UA127,2025-09-23,0.30,5,Easy
+UA128,UA128,2025-09-23,0.80,6,Difficult
+UA129,UA129,2025-09-23,0.55,7,Medium
+UA130,UA130,2025-09-23,0.25,8,Easy
+UA131,UA131,2025-09-23,0.60,9,Medium
+UA132,UA132,2025-09-23,0.70,10,Difficult
+UA133,UA133,2025-09-23,0.40,11,Medium
+UA134,UA134,2025-09-23,0.20,12,Easy
+UA135,UA135,2025-09-23,0.75,13,Difficult
+UA136,UA136,2025-09-23,0.50,14,Medium
+UA137,UA137,2025-09-23,0.35,15,Easy
+UA138,UA138,2025-09-23,0.68,16,Difficult
+UA139,UA139,2025-09-23,0.42,17,Medium
+UA140,UA140,2025-09-23,0.28,18,Easy
+UA141,UA141,2025-09-23,0.73,19,Difficult
+UA142,UA142,2025-09-23,0.47,20,Medium
+
