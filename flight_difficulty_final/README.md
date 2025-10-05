@@ -139,7 +139,7 @@ Daily rank & classification
 
 Example Output
 
-## 🧮 Sample Output — Flight Difficulty Scoring
+##  Sample Output — Flight Difficulty Scoring
 
 | Flight Number | Date       | Delay Score | Load Factor | Ground Stress | SSR Density | Bag Stress | Overall Difficulty Score | Category   |
 |---------------|------------|------------|------------|--------------|------------|------------|-------------------------|-----------|
