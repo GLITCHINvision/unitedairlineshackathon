@@ -1,83 +1,97 @@
-
 import pandas as pd
 import numpy as np
 
-# File paths
-flights_fp = "data/Flight Level Data.csv"
-pnr_fp = "data/PNR Flight Level Data.csv"
-remarks_fp = "data/PNR Remark Level Data.csv"
-bags_fp = "data/Bag Level Data.csv"
-airports_fp = "data/Airports Data.csv"
+# ----------------- Load Data -----------------
+DATA_DIR = "data/"
 
-# Load datasets
-flights = pd.read_csv(flights_fp)
-pnr = pd.read_csv(pnr_fp)
-remarks = pd.read_csv(remarks_fp)
-bags = pd.read_csv(bags_fp)
-airports = pd.read_csv(airports_fp)
+flights = pd.read_csv(f"{DATA_DIR}Flight Level Data.csv", low_memory=False)
+pnr = pd.read_csv(f"{DATA_DIR}PNR Flight Level Data.csv", low_memory=False)
+remarks = pd.read_csv(f"{DATA_DIR}PNR Remark Level Data.csv", low_memory=False)
+bags = pd.read_csv(f"{DATA_DIR}Bag Level Data.csv", low_memory=False)
+airports = pd.read_csv(f"{DATA_DIR}Airports Data.csv", low_memory=False)
 
 # ----------------- Feature Engineering -----------------
 
-# 1. Flight delay (mins)
-flights["departure_delay"] = (
-    pd.to_datetime(flights["actual_departure_datetime_local"]) - 
-    pd.to_datetime(flights["scheduled_departure_datetime_local"])
-).dt.total_seconds() / 60
+# 🕓 1. Compute flight departure delay (in minutes)
+flights["actual_departure_datetime_local"] = pd.to_datetime(flights["actual_departure_datetime_local"], errors="coerce")
+flights["scheduled_departure_datetime_local"] = pd.to_datetime(flights["scheduled_departure_datetime_local"], errors="coerce")
 
-# 2. Ground time stress
-flights["ground_time_stress"] = (
-    flights["scheduled_ground_time_minutes"] - flights["minimum_turn_minutes"]
+flights["departure_delay"] = (
+    (flights["actual_departure_datetime_local"] - flights["scheduled_departure_datetime_local"])
+    .dt.total_seconds() / 60
+).fillna(0).clip(lower=0)
+
+# ⏱️ 2. Ground time stress → how tight the schedule is
+flights["ground_time_stress"] = flights["scheduled_ground_time_minutes"] - flights["minimum_turn_minutes"]
+
+#  3. Passenger-related aggregates
+pnr_grouped = (
+    pnr.groupby(["flight_number", "scheduled_departure_date_local"], as_index=False)
+       .agg({
+            "total_pax": "sum",
+            "lap_child_count": "sum",
+            "is_child": "sum",
+            "basic_economy_pax": "sum",
+            "is_stroller_user": "sum"
+       })
 )
 
-# 3. Passenger load per flight
-pnr_grouped = pnr.groupby(["flight_number", "scheduled_departure_date_local"]).agg({
-    "total_pax":"sum",
-    "lap_child_count":"sum",
-    "is_child":"sum",
-    "basic_economy_pax":"sum",
-    "is_stroller_user":"sum"
-}).reset_index()
+#  4. Special service request (SSR) counts
+remarks_grouped = (
+    remarks.groupby(["flight_number", "pnr_creation_date"], as_index=False)
+           .size()
+           .rename(columns={"size": "ssr_count"})
+)
 
-# 4. Special service requests count
-remarks_grouped = remarks.groupby(["flight_number", "pnr_creation_date"]).size().reset_index(name="ssr_count")
+#  5. Bag data: Checked vs Transfer
+bags_grouped = (
+    bags.groupby(["flight_number", "scheduled_departure_date_local", "bag_type"])
+        .size()
+        .unstack(fill_value=0)
+        .reset_index()
+)
 
-# 5. Bags (checked vs transfer)
-bags_grouped = bags.groupby(["flight_number","scheduled_departure_date_local","bag_type"]).size().unstack(fill_value=0).reset_index()
-bags_grouped["transfer_ratio"] = bags_grouped.get("Transfer",0) / (bags_grouped.get("Checked",0)+1)
+# Calculate transfer ratio safely
+bags_grouped["transfer_ratio"] = bags_grouped.get("Transfer", 0) / (bags_grouped.get("Checked", 0) + 1)
 
-# ----------------- Merge Features -----------------
+# ----------------- Merge All Features -----------------
+df = (
+    flights.merge(pnr_grouped, on=["flight_number", "scheduled_departure_date_local"], how="left")
+           .merge(bags_grouped, on=["flight_number", "scheduled_departure_date_local"], how="left")
+           .merge(
+               remarks_grouped,
+               left_on=["flight_number", "scheduled_departure_date_local"],
+               right_on=["flight_number", "pnr_creation_date"],
+               how="left"
+           )
+)
 
-df = flights.merge(pnr_grouped, on=["flight_number","scheduled_departure_date_local"], how="left")
-df = df.merge(bags_grouped, on=["flight_number","scheduled_departure_date_local"], how="left")
-df = df.merge(remarks_grouped, left_on=["flight_number","scheduled_departure_date_local"],
-              right_on=["flight_number","pnr_creation_date"], how="left")
-
-# Fill NaN
 df = df.fillna(0)
 
-# ----------------- Difficulty Score -----------------
-# Weighted scoring system
+# ----------------- Difficulty Score Calculation -----------------
+
+# Weighted feature scoring
 df["difficulty_score"] = (
-    df["departure_delay"].clip(lower=0)/10 +
-    df["ground_time_stress"].apply(lambda x: 1 if x<0 else 0)*5 +
-    df["total_pax"]/100 +
-    df["ssr_count"]*2 +
-    df["transfer_ratio"]*10
+    df["departure_delay"] / 10 +                               # scaled delay
+    (df["ground_time_stress"] < 0).astype(int) * 5 +           # short turnaround penalty
+    df["total_pax"] / 100 +                                    # passenger load
+    df["ssr_count"] * 2 +                                      # SSR impact
+    df["transfer_ratio"] * 10                                  # baggage complexity
 )
 
-# Daily Ranking
-df["rank"] = df.groupby("scheduled_departure_date_local")["difficulty_score"].rank("dense", ascending=False)
+# ----------------- Ranking & Classification -----------------
+df["rank"] = df.groupby("scheduled_departure_date_local")["difficulty_score"] \
+               .rank("dense", ascending=False)
 
-# Classification into Easy / Medium / Difficult (tertiles)
-def classify(rank, total):
-    if rank <= total/3: return "Difficult"
-    elif rank <= 2*total/3: return "Medium"
-    else: return "Easy"
-
-df["class"] = df.groupby("scheduled_departure_date_local")["rank"].transform(
-    lambda r: [classify(x, len(r)) for x in r]
+# Use pandas qcut for automatic tertile classification (faster + fairer)
+df["class"] = (
+    df.groupby("scheduled_departure_date_local")["difficulty_score"]
+      .transform(lambda x: pd.qcut(x, q=3, labels=["Easy", "Medium", "Difficult"]))
 )
 
-# Save output
-df.to_csv("test_yourname.csv", index=False)
-print("✅ Difficulty scores computed and saved to test_yourname.csv")
+# ----------------- Save Final Output -----------------
+output_path = "flight_difficulty_score.csv"
+df.to_csv(output_path, index=False)
+
+print(f" Flight difficulty scores computed successfully and saved to '{output_path}'")
+
