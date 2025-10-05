@@ -141,10 +141,10 @@ Example Output
 
 ## 🧮 Sample Output — Flight Difficulty Scoring
 
-| Flight Number | Date       | Delay Score | Load Factor | Ground Stress | SSR Density | Bag Stress | Overall Difficulty Score | Category  |
-|----------------|------------|-------------|--------------|----------------|--------------|----------------------------|------------|
-| **UA123**      | 2025-01-05 | 0.65        | 0.80         | 0.72           | 0.50         | 0.40         | **0.69**                 | 🟥 Difficult |
-| **UA456**      | 2025-01-05 | 0.20        | 0.35         | 0.40           | 0.10         | 0.15         | **0.27**                 | 🟩 Easy |
+| Flight Number | Date       | Delay Score | Load Factor | Ground Stress | SSR Density | Bag Stress | Overall Difficulty Score | Category   |
+|---------------|------------|------------|------------|--------------|------------|------------|-------------------------|-----------|
+| UA123         | 2025-01-05 | 0.65       | 0.80       | 0.72         | 0.50       | 0.40       | 0.69                    | Difficult |
+| UA456         | 2025-01-05 | 0.20       | 0.35       | 0.40         | 0.10       | 0.15       | 0.27                    | Easy      |
 
 
 Author
