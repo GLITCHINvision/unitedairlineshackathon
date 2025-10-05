@@ -12,7 +12,7 @@ airports = pd.read_csv(f"{DATA_DIR}Airports Data.csv", low_memory=False)
 
 # ----------------- Feature Engineering -----------------
 
-# 🕓 1. Compute flight departure delay (in minutes)
+#  1. Compute flight departure delay (in minutes)
 flights["actual_departure_datetime_local"] = pd.to_datetime(flights["actual_departure_datetime_local"], errors="coerce")
 flights["scheduled_departure_datetime_local"] = pd.to_datetime(flights["scheduled_departure_datetime_local"], errors="coerce")
 
@@ -21,7 +21,7 @@ flights["departure_delay"] = (
     .dt.total_seconds() / 60
 ).fillna(0).clip(lower=0)
 
-# ⏱️ 2. Ground time stress → how tight the schedule is
+#  2. Ground time stress → how tight the schedule is
 flights["ground_time_stress"] = flights["scheduled_ground_time_minutes"] - flights["minimum_turn_minutes"]
 
 #  3. Passenger-related aggregates
