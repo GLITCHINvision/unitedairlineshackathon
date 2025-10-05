@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-# ----------------- Load Data -----------------
+
 DATA_DIR = "data/"
 
 flights = pd.read_csv(f"{DATA_DIR}Flight Level Data.csv", low_memory=False)
@@ -10,9 +10,8 @@ remarks = pd.read_csv(f"{DATA_DIR}PNR Remark Level Data.csv", low_memory=False)
 bags = pd.read_csv(f"{DATA_DIR}Bag Level Data.csv", low_memory=False)
 airports = pd.read_csv(f"{DATA_DIR}Airports Data.csv", low_memory=False)
 
-# ----------------- Feature Engineering -----------------
 
-#  1. Compute flight departure delay (in minutes)
+
 flights["actual_departure_datetime_local"] = pd.to_datetime(flights["actual_departure_datetime_local"], errors="coerce")
 flights["scheduled_departure_datetime_local"] = pd.to_datetime(flights["scheduled_departure_datetime_local"], errors="coerce")
 
@@ -21,10 +20,10 @@ flights["departure_delay"] = (
     .dt.total_seconds() / 60
 ).fillna(0).clip(lower=0)
 
-#  2. Ground time stress → how tight the schedule is
+
 flights["ground_time_stress"] = flights["scheduled_ground_time_minutes"] - flights["minimum_turn_minutes"]
 
-#  3. Passenger-related aggregates
+
 pnr_grouped = (
     pnr.groupby(["flight_number", "scheduled_departure_date_local"], as_index=False)
        .agg({
@@ -36,14 +35,14 @@ pnr_grouped = (
        })
 )
 
-#  4. Special service request (SSR) counts
+
 remarks_grouped = (
     remarks.groupby(["flight_number", "pnr_creation_date"], as_index=False)
            .size()
            .rename(columns={"size": "ssr_count"})
 )
 
-#  5. Bag data: Checked vs Transfer
+
 bags_grouped = (
     bags.groupby(["flight_number", "scheduled_departure_date_local", "bag_type"])
         .size()
@@ -51,10 +50,10 @@ bags_grouped = (
         .reset_index()
 )
 
-# Calculate transfer ratio safely
+
 bags_grouped["transfer_ratio"] = bags_grouped.get("Transfer", 0) / (bags_grouped.get("Checked", 0) + 1)
 
-# ----------------- Merge All Features -----------------
+
 df = (
     flights.merge(pnr_grouped, on=["flight_number", "scheduled_departure_date_local"], how="left")
            .merge(bags_grouped, on=["flight_number", "scheduled_departure_date_local"], how="left")
@@ -68,9 +67,7 @@ df = (
 
 df = df.fillna(0)
 
-# ----------------- Difficulty Score Calculation -----------------
 
-# Weighted feature scoring
 df["difficulty_score"] = (
     df["departure_delay"] / 10 +                               # scaled delay
     (df["ground_time_stress"] < 0).astype(int) * 5 +           # short turnaround penalty
@@ -79,17 +76,17 @@ df["difficulty_score"] = (
     df["transfer_ratio"] * 10                                  # baggage complexity
 )
 
-# ----------------- Ranking & Classification -----------------
+
 df["rank"] = df.groupby("scheduled_departure_date_local")["difficulty_score"] \
                .rank("dense", ascending=False)
 
-# Use pandas qcut for automatic tertile classification (faster + fairer)
+
 df["class"] = (
     df.groupby("scheduled_departure_date_local")["difficulty_score"]
       .transform(lambda x: pd.qcut(x, q=3, labels=["Easy", "Medium", "Difficult"]))
 )
 
-# ----------------- Save Final Output -----------------
+
 output_path = "flight_difficulty_score.csv"
 df.to_csv(output_path, index=False)
 
