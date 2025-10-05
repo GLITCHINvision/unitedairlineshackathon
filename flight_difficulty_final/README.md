@@ -51,14 +51,14 @@ All numeric features are normalized (Min–Max scaling) for fair comparison acro
 
 A weighted formula combines all normalized feature values:
 
-\[
-\text{Flight Difficulty Score (FDS)} =
-0.35(Delay) +
-0.25(Passenger Load) +
-0.15(SSR Density) +
-0.15(Ground Stress) +
-0.10(Baggage Stress)
-\]
+Flight Difficulty Score (FDS) is calculated as:
+
+FDS = 0.35 * Delay
+    + 0.25 * Passenger Load
+    + 0.15 * SSR Density
+    + 0.15 * Ground Stress
+    + 0.10 * Baggage Stress
+
 
 - Each day’s scores are normalized so that **max(FDS) = 1.0**  
 - Flights are then ranked and classified:
@@ -97,20 +97,23 @@ A weighted formula combines all normalized feature values:
 
 ##  Folder Structure  
 
+##  Project Folder Structure
+
 Flight-Difficulty-Project/
 │
 ├── data/
-│ ├── Airports Data.csv
-│ ├── Bag Level Data.csv
-│ ├── Flight Level Data.csv
-│ ├── PNR Flight Level Data.csv
-│ └── PNR Remark Level Data.csv
+│   ├── Airports Data.csv
+│   ├── Bag Level Data.csv
+│   ├── Flight Level Data.csv
+│   ├── PNR Flight Level Data.csv
+│   └── PNR Remark Level Data.csv
 │
-├── compute_difficulty.py
-├── requirements.txt
-├── README.md
-├── test_yourname.csv
-└── flight_difficulty_presentation.pptx
+├── compute_difficulty.py         # Main Python script to calculate Flight Difficulty Score
+├── requirements.txt              # Python dependencies
+├── README.md                     # Project documentation
+├── test_yourname.csv             # Output CSV with scores & categories
+└── flight_difficulty_presentation.pptx  # Slide deck summarizing findings
+
 
 
 
